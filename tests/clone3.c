@@ -73,6 +73,10 @@ enum validity_flags {
 
 #undef _
 
+#ifndef CLONE_CLEAR_SIGHAND
+# define CLONE_CLEAR_SIGHAND	0x100000000ULL
+#endif
+
 static const int child_exit_status = 42;
 
 #if RETVAL_INJECTED
@@ -277,6 +281,13 @@ main(int argc, char *argv[])
 			false, 0, "0", "0" },
 		{ { .flags = CLONE_PARENT_SETTID },
 			false, 0, "CLONE_PARENT_SETTID", "0" },
+
+		/* check clone3_flags/clone_flags interoperation */
+		{ { .flags = CLONE_CLEAR_SIGHAND },
+			false, 0, "CLONE_CLEAR_SIGHAND", "0" },
+		{ { .flags = CLONE_PARENT_SETTID | CLONE_CLEAR_SIGHAND },
+			false, 0, "CLONE_PARENT_SETTID|CLONE_CLEAR_SIGHAND",
+			"0" },
 	};
 
 	struct clone_args *arg = tail_alloc(sizeof(*arg));
@@ -383,9 +394,9 @@ main(int argc, char *argv[])
 	       "|CLONE_THREAD|CLONE_NEWNS|CLONE_SYSVSEM|CLONE_SETTLS"
 	       "|CLONE_CHILD_CLEARTID|CLONE_UNTRACED|CLONE_NEWCGROUP"
 	       "|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_IO"
-	       "|0xfacefeed004000de"), sprintrc(rc));
+	       "|CLONE_CLEAR_SIGHAND|0xfacefeec004000de"), sprintrc(rc));
 
-	arg->flags = 0xdec0dead004000ffULL;
+	arg->flags = 0xdec0deac004000ffULL;
 	arg->exit_signal = 250;
 	arg->stack = 0xface1e55beeff00dULL;
 	arg->stack_size = 0xcaffeedefacedca7ULL;
@@ -393,7 +404,7 @@ main(int argc, char *argv[])
 	printf("clone3({flags=%s, exit_signal=250"
 	       ", stack=0xface1e55beeff00d, stack_size=0xcaffeedefacedca7}, 64)"
 	       " = %s" INJ_STR,
-	       XLAT_UNKNOWN(0xdec0dead004000ff, "CLONE_???"),
+	       XLAT_UNKNOWN(0xdec0deac004000ff, "CLONE_???"),
 	       sprintrc(rc));
 
 	arg->exit_signal = SIGCHLD;
